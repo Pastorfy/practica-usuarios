@@ -1,21 +1,23 @@
-import { Body, Controller,Delete,Get, Param, Post, Put } from '@nestjs/common';
-import { UsuariosService } from '../services/usuarios.service'
-import ApiReponse from '../../interfaces/ApiResponse'
+import { Body, Controller,Delete,Get, Param, Post, Put,UseGuards } from '@nestjs/common';
+import { UsuariosService } from './usuarios.service'
+import ApiReponse from '../interfaces/ApiResponse'
+import * as bcrypt from 'bcrypt';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { LocalAuthGuard } from '../auth/local-auth.guard';
+import { AuthService } from '../auth/auth.service';
+
 
 @Controller('api/usuarios')
 export class UsuariosController {
 
-   constructor(
-      private usuario: UsuariosService
-   ){}
+    constructor(
+          private usuario: UsuariosService
+    ){}
    
+    @UseGuards(JwtAuthGuard)
     @Get("/")
     async get(){
-        const response : ApiReponse= {
-            Code:0,
-            Message:"",
-            Data:[]
-        }        
+        const response : ApiReponse= { Code:0, Message:"", Data:[]}        
         try{            
             response.Data=await this.usuario.get();
             response.Message="Petición realizada con éxito";               
@@ -28,14 +30,10 @@ export class UsuariosController {
         }        
     }
 
+    @UseGuards(JwtAuthGuard)
     @Get(':id')
     async getOne(@Param('id')id:number) {
-
-        const response : ApiReponse= {
-            Code:-1,
-            Message:"",
-            Data: null
-        }                
+        const response : ApiReponse= { Code:-1, Message:"", Data: null }                
         try {            
             response.Data=await this.usuario.getOne(id);
             response.Message="Petición realizada con éxito";               
@@ -48,14 +46,32 @@ export class UsuariosController {
         }        
     }
 
-     @Post()
-     create(@Body() body:any){
-        const response : ApiReponse= {
-            Code:-1,
-            Message:"",
-            Data:false
-        }                
-        try{            
+    //@UseGuards(JwtAuthGuard)
+    @Post()
+    async create(@Body() body:any){
+        const response : ApiReponse= { Code:-1, Message:"", Data:false }                
+        try{                        
+            const hash = await bcrypt.hash(body.password, 10);            
+            body.password=hash;            
+
+            const ExistEmail= await this.usuario.getByEmail(body.email);
+            if(ExistEmail){
+                response.Data=false;
+                response.Code=-1;
+                response.Message="Este correo ya ha sido dado de alta, favor de ingresar uno diferente.";               
+                return response;
+            }
+
+            const ExistUsername= await this.usuario.getByUsername(body.username);
+            if(ExistUsername){
+                response.Data=false;
+                response.Code=-1;
+                response.Message="Este nombre de usuario se encuentra en uso.";               
+                return response;
+            }
+
+            console.log(ExistEmail);
+
             this.usuario.create(body);
             response.Data=true;
             response.Code=0;            
@@ -68,14 +84,13 @@ export class UsuariosController {
         }           
     }
 
-     @Put(":id")
-     update(@Param('id') id:number,@Body() body:any ){
-        const response : ApiReponse= {
-            Code:-1,
-            Message:"",
-            Data:false
-        }                
+    @UseGuards(JwtAuthGuard)
+    @Put(":id")
+    async update(@Param('id') id:number,@Body() body:any ){
+        const response : ApiReponse= { Code:-1, Message:"", Data:false }                
         try{            
+            const hash = await bcrypt.hash(body.password, 10);            
+            body.password=hash;            
             this.usuario.update(id,body);        
             response.Data=true;
             response.Code=0;            
@@ -91,11 +106,7 @@ export class UsuariosController {
      
      @Delete(':id')
      delete(@Param('id') id:number){
-        const response : ApiReponse= {
-            Code:-1,
-            Message:"",
-            Data:false
-        }                
+        const response : ApiReponse= { Code:-1, Message:"", Data:false }                
         try{            
             this.usuario.delete(id);        
             response.Data=true;

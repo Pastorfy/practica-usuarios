@@ -23,10 +23,11 @@
         "./*"
       ]
     },
-    "types": [
+    "types": [      
       "@nuxt/types",
       "@nuxtjs/axios",
-      "@types/node"
+      "@types/node",
+      "@nuxtjs/auth-next",
     ]
   },
   "exclude": [

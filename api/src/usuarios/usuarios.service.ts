@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import {InjectRepository} from '@nestjs/typeorm'
-import {Repository} from 'typeorm'
-import { Usuario } from '../entities/usuario.entity';
-import  ApiReponse   from '../../interfaces/ApiResponse';
+import {FindOneOptions, FindOptionsSelect, Repository} from 'typeorm'
+import { Usuario } from './usuario.entity';
+import  ApiReponse   from '../interfaces/ApiResponse';
 
  
 @Injectable()
@@ -20,11 +20,11 @@ export class UsuariosService {
         }        
     }
 
-    async getOne(id: any){
-        try{
+    async getOne(id: any):Promise<Usuario| undefined>{
+        try{            
             const data= await this.usuariosRepo.find({
-                where:{
-                    id:id
+                where: {
+                    id:id                    
                 }
             });        
             return data.find(x => x.id=id);
@@ -32,6 +32,30 @@ export class UsuariosService {
             throw  err;            
         }        
     }
+    async getByUsername(username: string):Promise<Usuario| undefined>{
+        try{                        
+            const data:Usuario = await this.usuariosRepo.createQueryBuilder("usuario").
+                                where('usuario.username= :username',{username:username}).                                
+                                getOne();            
+            return Promise.resolve(data);
+        }catch(err){
+            throw  err;            
+        }        
+    }
+    
+    async getByEmail(email: string):Promise<Usuario| undefined>{
+        try{                        
+            const data:Usuario = await this.usuariosRepo.createQueryBuilder("usuario").
+                                where('usuario.email= :email',{email:email}).                                
+                                getOne();            
+            return Promise.resolve(data);
+        }catch(err){
+            throw  err;            
+        }        
+    }
+
+
+
     create(body:any){
         try{
             const newUsuario= this.usuariosRepo.create(body);        
@@ -46,7 +70,7 @@ export class UsuariosService {
             const data= await this.usuariosRepo
                 .createQueryBuilder()
                 .update(Usuario)
-                .set({password: body.password,name:body.name})
+                .set({password: body.password,username:body.username,nombreCompleto:body.nombreCompleto,email:body.email})
                 .where("id = :id", { id: id })
                 .execute()        
                 

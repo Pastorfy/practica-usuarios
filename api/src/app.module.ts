@@ -1,7 +1,11 @@
 import { Module } from '@nestjs/common';
-
+import ApiReponse from './interfaces/ApiResponse'
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from './auth/auth.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
 
 
 @Module({
@@ -18,9 +22,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         retryDelay:3000,
         retryAttempts:10
       }),
-      UsuariosModule
+      UsuariosModule,
+      AuthModule,      
     ],
-  controllers: [],
-  providers: [],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}
+
+
